@@ -1,0 +1,7 @@
+.env
+node_modules
+
+help.txt
+database.db
+
+.vscode
