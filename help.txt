@@ -1,0 +1,16 @@
+>>> # Lista de comandos
+
+## &meme
+    Serve para emitir um áudio do "MILKSHAKE DE MORANGO";
+
+## &random <MAX>
+    Devolve um número aleatório de 1 até o seu máximo fornecido;
+
+## &echo <ALGUMACOISA>
+    Repete tudo o que for dito à frente no mesmo canal;
+
+## &dicio <PALAVRA>
+    Busca o significado [em imagem] pela palavra colocada à frente;
+##
+    &luck
+
