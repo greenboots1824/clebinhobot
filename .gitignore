@@ -1,7 +1,9 @@
+# Environment files
 .env
 node_modules
 
-help.txt
-database.db*
+# My ideia files :P
+ideia.txt
 
-.vscode
+# Databases
+database.db*
