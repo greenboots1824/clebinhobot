@@ -1,5 +1,8 @@
-import { Client, GatewayIntentBits } from "discord.js";
 import "dotenv/config";
+import {
+	Client,
+	GatewayIntentBits
+} from "discord.js";
 
 import {
 	randomDatabase,
@@ -7,11 +10,12 @@ import {
 	searchDatabaseRandomRegex
 } from "./api/database.js";
 
+import {
+	algorithmRNG,
+	arrayRandomReturn
+} from "./algorithm/randomization.js";
+
 import { apiExists } from "./api/checkApi.js";
-
-import { arrayRandomReturn } from "./api/register.js";
-
-import { algorithmBot } from "./api/algorithm.js";
 
 const prefix = "&";
 
@@ -24,15 +28,17 @@ const client = new Client({
 });
 
 client.once("clientReady", async (client) => {
-	await console.log(`Online como ${client.user.tag}`);
+	await console.log(`[*] Online como ${client.user.tag}`);
 });
 
 client.on("messageCreate", async (message) => {
 	if (message.author.bot) return;
+
 	const userContent = message.content;
 
 	if (message.mentions.has(client.user)) {
 		const phraseToSpeak = await randomDatabase();
+		if (phraseToSpeak === null) return;
 
 		await message.reply(phraseToSpeak); 
 		return;
@@ -125,7 +131,60 @@ client.on("messageCreate", async (message) => {
 		}
 		return;
 	} else {
-		algorithmBot(userContent, client, message);
+		let registerRNG = algorithmRNG(20);
+		let speakRNG = algorithmRNG(20);
+
+		const arrayPhrase = userContent.trim().split(/\s+/);
+		let arrayRandom = arrayPhrase[Math.floor(Math.random() * arrayPhrase.length)];
+
+		const maxRolls = algorithmRNG(arrayPhrase.length);
+
+		if (registerRNG < 16) {
+			// Register the last phrase/word sended
+			if (
+				arrayRandom === `<@${client.user.id}>` ||
+				userContent === `<@${client.user.id}>`
+			) return;
+
+			registerRNG = algorithmRNG(3);
+			const authorMessage = message.author.username;
+
+			if (registerRNG === 1) {
+				await insertDatabase(arrayRandom, authorMessage); // Random word
+			} else if (registerRNG === 2 && arrayPhrase.length < 50) {
+				await insertDatabase(userContent, authorMessage); // Random phrase
+			} else if (registerRNG === 3) {
+				const arrayWords = [];
+
+				for (let i = 0; i < maxRolls; i++) {
+					arrayRandom = arrayRandomReturn(userContent);
+
+					if (!arrayWords.includes(arrayRandom)) {
+						await insertDatabase(arrayRandom, authorMessage);
+					}
+
+					arrayWords.push(arrayRandom);
+				}
+			}
+		}
+		
+		if (speakRNG < 14) {
+			// Speak a random phrase/word
+			speakRNG = algorithmRNG(3);
+			let phraseToSpeak;
+
+			if (speakRNG === 1) {
+				phraseToSpeak = await searchDatabaseRandomRegex(arrayRandom);
+			} else if (speakRNG === 2) {
+				phraseToSpeak = await randomDatabase();
+			} else {
+				// Pick up a random word inside the database :D
+				phraseToSpeak = arrayRandomReturn(await randomDatabase());
+			}
+
+			if (phraseToSpeak === null) return;
+			await message.reply(phraseToSpeak);
+		}
 	}
 });
 
