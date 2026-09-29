@@ -1,18 +1,23 @@
 import "dotenv/config";
 import {
-	Client,
-	GatewayIntentBits
+  Client,
+  GatewayIntentBits
 } from "discord.js";
 
 import {
-	randomDatabase,
-	insertDatabase,
-	searchDatabaseRandomRegex
+  randomDatabase,
+  insertDatabase,
+  searchDatabaseRandomRegex
 } from "./api/database.js";
 
 import {
-	algorithmRNG,
-	arrayRandomReturn
+  readFile,
+  writeFile
+} from "node:fs/promises";
+
+import {
+  algorithmRNG,
+  arrayRandomReturn
 } from "./algorithm/randomization.js";
 
 import { apiExists } from "./api/checkApi.js";
@@ -20,172 +25,182 @@ import { apiExists } from "./api/checkApi.js";
 const prefix = "&";
 
 const client = new Client({
-	intents: [
-		GatewayIntentBits.Guilds,
-		GatewayIntentBits.GuildMessages,
-		GatewayIntentBits.MessageContent
-	]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ]
 });
 
 client.once("clientReady", async (client) => {
-	await console.log(`[*] Online como ${client.user.tag}`);
+  await console.log(`[*] Online como ${client.user.tag}`);
 });
 
 client.on("messageCreate", async (message) => {
-	if (message.author.bot) return;
+  if (message.author.bot) return;
 
-	const userContent = message.content;
+  const userContent = message.content;
 
-	if (message.mentions.has(client.user)) {
-		const phraseToSpeak = await randomDatabase();
-		if (phraseToSpeak === null) return;
+  if (message.mentions.has(client.user)) {
+    const phraseToSpeak = await randomDatabase();
+    if (phraseToSpeak === null) return;
 
-		await message.reply(phraseToSpeak); 
-		return;
-	}
+    await message.reply(phraseToSpeak); 
+    return;
+  }
 
-	if (userContent.toLowerCase() === 'bom dia, clebinho') {
-		await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
-		await message.reply(`Bom dia, ${message.author.username}! :D`);
-		return;
-	} else if (userContent === `${prefix}meme`) {
-		await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
-		//await message.reply("Zezé di Camargo é bom demaiziiii");
-		await message.reply({
-			files: [
-				"https://storage.soundinstants.com/toma-milk-shake-de-morango.mp3"
-			]
-		})
-		return;
-	} else if (userContent === `${prefix}random`) {
-		await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
-		const num = Math.random();
+  if (userContent.toLowerCase() === 'bom dia, clebinho') {
+    await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
+    await message.reply(`Bom dia, ${message.author.username}! :D`);
+  } else if (userContent === `${prefix}help`) {
+    await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
+    const helpContent = await readFile('./help.txt','utf8');
 
-		await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
-		await message.reply(`Número: ${num}`);
-		return;
-	} else if (userContent.startsWith(`${prefix}echo`)) {
-		await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
-		const text = userContent.slice(5).trim();
+    if (helpContent.trim() === '') return;
 
-		await message.reply(`${text}`);
-		return;
-	} else if (userContent.startsWith(`${prefix}dicio`)) {
-		await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
-		const word = userContent.slice(6).trim();
+    await message.reply(helpContent);
 
-		if (!word) {
-			await message.reply("Por favor, digite uma palavra para pesquisar!");
-			return;
-		}
+  } else if (userContent === `${prefix}meme`) {
+    await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
+    //await message.reply("Zezé di Camargo é bom demaiziiii");
+    await message.reply({
+      files: [
+        "https://storage.soundinstants.com/toma-milk-shake-de-morango.mp3"
+      ]
+    })
+    return;
+  } else if (userContent.startsWith(`${prefix}random`)) {
+    try {
+      await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
+      const userMaxNum = parseInt(userContent.slice(7).trim());
 
-		const url = `https://s.dicio.com.br/${word}.jpg`;
+      if (userMaxNum == null) return;
 
-		const startRequest = Date.now();
-		const response = await apiExists(url);
-		const responseTime = Date.now() - startRequest;
+      const numCalc = Math.floor(Math.random() * 10) + 1;
 
-		if (response) {
-			await message.reply({
-				content: `Palavra "${word}" encontrada!\nTempo levado: ${responseTime}ms\nSignificado abaixo:`,
-				files: [
-					`${url}`
-				]
-			});
-		} else { 
-			await message.reply(`Palavra "${word}" não foi encontrada.`);
-		}
-		return;
-	} else if (userContent.startsWith(`${prefix}luck`)) {
-		await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
-		const phrase = await randomDatabase();
+      await message.reply(`Número: ${numCalc}`);
+    } catch (error) {
+      return;
+    }
+  } else if (userContent.startsWith(`${prefix}echo`)) {
+    await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
+    const textContent = userContent.slice(5).trim();
 
-		if (!phrase) {
-			await message.reply("Não há mensagens!");
-		} else {
-			await message.reply(`Mensagem:\n> ${phrase}`)
-		}
-	} else if (userContent.startsWith(`${prefix}learn`)) {
-		await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
-		const msgToLearn = userContent.slice(6).trim();
+    await message.reply(textContent);
+  } else if (userContent.startsWith(`${prefix}dicio`)) {
+    await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
+    const word = userContent.slice(6).trim();
 
-		await insertDatabase(msgToLearn, message.author.username);
+    if (!word) {
+      await message.reply("Por favor, digite uma palavra para pesquisar!");
+      return;
+    }
 
-		await message.reply(`Mensagem "${msgToLearn}" aprendida!`);
-		return;
-	} else if (userContent.startsWith(`${prefix}automsg`)) {
-		await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
-		const automsgUser = userContent.slice(8).trim();
-		
-		if (automsgUser.toLowerCase() === 'on') {
-			await message.reply("Mensagens automáticas ligadas!");
-		} else if (automsgUser.toLowerCase() === 'off') {
-			await message.reply("Mensagens automáticas desligadas!");
-		} else {
-			if (!automsgUser) {
-				await message.reply("Defina uma configuração! On/off");
-				return;
-			}
+    const url = `https://s.dicio.com.br/${word}.jpg`;
 
-			await message.reply(`"${automsgUser}" não é uma configuração válida`)
-		}
-		return;
-	} else {
-		let registerRNG = algorithmRNG(20);
-		let speakRNG = algorithmRNG(20);
+    const startRequest = Date.now();
+    const response = await apiExists(url);
+    const responseTime = Date.now() - startRequest;
 
-		const arrayPhrase = userContent.trim().split(/\s+/);
-		let arrayRandom = arrayPhrase[Math.floor(Math.random() * arrayPhrase.length)];
+    if (response) {
+      await message.reply({
+        content: `Palavra "${word}" encontrada!\nTempo levado: ${responseTime}ms\nSignificado abaixo:`,
+        files: [
+          `${url}`
+        ]
+      });
+    } else { 
+      await message.reply(`Palavra "${word}" não foi encontrada.`);
+    }
+  } else if (userContent.startsWith(`${prefix}luck`)) {
+    await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
+    const phrase = await randomDatabase();
 
-		const maxRolls = algorithmRNG(arrayPhrase.length);
+    if (!phrase) {
+      await message.reply("Não há mensagens!");
+    } else {
+      await message.reply(`Mensagem:\n> ${phrase}`)
+    }
+  } else if (userContent.startsWith(`${prefix}learn`)) {
+    await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
+    const msgToLearn = userContent.slice(6).trim();
 
-		if (registerRNG < 16) {
-			// Register the last phrase/word sended
-			if (
-				arrayRandom === `<@${client.user.id}>` ||
-				userContent === `<@${client.user.id}>`
-			) return;
+    await insertDatabase(msgToLearn, message.author.username);
 
-			registerRNG = algorithmRNG(3);
-			const authorMessage = message.author.username;
+    await message.reply(`Mensagem "${msgToLearn}" aprendida!`);
+  } else if (userContent.startsWith(`${prefix}automsg`)) {
+    await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
+    const automsgUser = userContent.slice(8).trim();
+    
+    if (automsgUser.toLowerCase() === 'on') {
+      await message.reply("Mensagens automáticas ligadas!");
+    } else if (automsgUser.toLowerCase() === 'off') {
+      await message.reply("Mensagens automáticas desligadas!");
+    } else {
+      if (!automsgUser) {
+        await message.reply("Defina uma configuração! On/off");
+        return;
+      }
 
-			if (registerRNG === 1) {
-				await insertDatabase(arrayRandom, authorMessage); // Random word
-			} else if (registerRNG === 2 && arrayPhrase.length < 50) {
-				await insertDatabase(userContent, authorMessage); // Random phrase
-			} else if (registerRNG === 3) {
-				const arrayWords = [];
+      await message.reply(`"${automsgUser}" não é uma configuração válida`)
+    }
+    return;
+  } else {
+    let registerRNG = algorithmRNG(20);
+    let speakRNG = algorithmRNG(20);
 
-				for (let i = 0; i < maxRolls; i++) {
-					arrayRandom = arrayRandomReturn(userContent);
+    const arrayPhrase = userContent.trim().split(/\s+/);
+    let arrayRandom = arrayPhrase[Math.floor(Math.random() * arrayPhrase.length)];
 
-					if (!arrayWords.includes(arrayRandom)) {
-						await insertDatabase(arrayRandom, authorMessage);
-					}
+    const maxRolls = algorithmRNG(arrayPhrase.length);
 
-					arrayWords.push(arrayRandom);
-				}
-			}
-		}
-		
-		if (speakRNG < 14) {
-			// Speak a random phrase/word
-			speakRNG = algorithmRNG(3);
-			let phraseToSpeak;
+    if (registerRNG < 16) {
+      // Register the last phrase/word sended
+      if (
+        arrayRandom === `<@${client.user.id}>` ||
+        userContent === `<@${client.user.id}>`
+      ) return;
 
-			if (speakRNG === 1) {
-				phraseToSpeak = await searchDatabaseRandomRegex(arrayRandom);
-			} else if (speakRNG === 2) {
-				phraseToSpeak = await randomDatabase();
-			} else {
-				// Pick up a random word inside the database :D
-				phraseToSpeak = arrayRandomReturn(await randomDatabase());
-			}
+      registerRNG = algorithmRNG(3);
+      const authorMessage = message.author.username;
 
-			if (phraseToSpeak === null) return;
-			await message.reply(phraseToSpeak);
-		}
-	}
+      if (registerRNG === 1) {
+        await insertDatabase(arrayRandom, authorMessage); // Random word
+      } else if (registerRNG === 2 && arrayPhrase.length < 50) {
+        await insertDatabase(userContent, authorMessage); // Random phrase
+      } else if (registerRNG === 3) {
+        const arrayWords = [];
+
+        for (let i = 0; i < maxRolls; i++) {
+          arrayRandom = arrayRandomReturn(userContent);
+
+          if (!arrayWords.includes(arrayRandom)) {
+            await insertDatabase(arrayRandom, authorMessage);
+          }
+
+          arrayWords.push(arrayRandom);
+        }
+      }
+    }
+    
+    if (speakRNG < 14) {
+      // Speak a random phrase/word
+      speakRNG = algorithmRNG(3);
+      let phraseToSpeak;
+
+      if (speakRNG === 1) {
+        phraseToSpeak = await searchDatabaseRandomRegex(arrayRandom);
+      } else if (speakRNG === 2) {
+        phraseToSpeak = await randomDatabase();
+      } else {
+        // Pick up a random word inside the database :D
+        phraseToSpeak = arrayRandomReturn(await randomDatabase());
+      }
+
+      if (phraseToSpeak === null) return;
+      await message.reply(phraseToSpeak);
+    }
+  }
 });
 
 client.login(process.env.DISCORD_TOKEN);
