@@ -1,4 +1,5 @@
 import "dotenv/config";
+
 import {
   Client,
   GatewayIntentBits
@@ -6,7 +7,7 @@ import {
 
 import {
   randomDatabase,
-  insertDatabase,
+  insertDatabaseInfo,
   searchDatabaseRandomRegex
 } from "./api/database.js";
 
@@ -33,7 +34,8 @@ const client = new Client({
 });
 
 client.once("clientReady", async (client) => {
-  await console.log(`[*] Online como ${client.user.tag}`);
+  console.log(`[*] Online como ${client.user.tag}!`);
+  console.log(`[*] Estou em ${client.guilds.cache.size} servidores!`);
 });
 
 client.on("messageCreate", async (message) => {
@@ -50,24 +52,22 @@ client.on("messageCreate", async (message) => {
   }
 
   if (userContent.toLowerCase() === 'bom dia, clebinho') {
-    await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
+    console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
     await message.reply(`Bom dia, ${message.author.username}! :D`);
   } else if (userContent === `${prefix}help`) {
-    await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
+    console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
     const helpContent = await readFile('./help.txt','utf8');
 
     if (helpContent.trim() === '') return;
 
     await message.reply(helpContent);
-
   } else if (userContent === `${prefix}meme`) {
     await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
-    //await message.reply("Zezé di Camargo é bom demaiziiii");
     await message.reply({
       files: [
         "https://storage.soundinstants.com/toma-milk-shake-de-morango.mp3"
       ]
-    })
+    });
     return;
   } else if (userContent.startsWith(`${prefix}random`)) {
     try {
@@ -125,7 +125,7 @@ client.on("messageCreate", async (message) => {
     await console.log(`[+] Comando "${userContent}" recebido por ${message.author.username}`);
     const msgToLearn = userContent.slice(6).trim();
 
-    await insertDatabase(msgToLearn, message.author.username);
+    await insertDatabaseInfo(msgToLearn, message.author.username);
 
     await message.reply(`Mensagem "${msgToLearn}" aprendida!`);
   } else if (userContent.startsWith(`${prefix}automsg`)) {
@@ -165,9 +165,9 @@ client.on("messageCreate", async (message) => {
       const authorMessage = message.author.username;
 
       if (registerRNG === 1) {
-        await insertDatabase(arrayRandom, authorMessage); // Random word
-      } else if (registerRNG === 2 && arrayPhrase.length < 50) {
-        await insertDatabase(userContent, authorMessage); // Random phrase
+        await insertDatabaseInfo(arrayRandom, authorMessage); // Random word
+      } else if (registerRNG === 2) {
+        await insertDatabaseInfo(userContent, authorMessage); // Random phrase
       } else if (registerRNG === 3) {
         const arrayWords = [];
 
@@ -175,7 +175,7 @@ client.on("messageCreate", async (message) => {
           arrayRandom = arrayRandomReturn(userContent);
 
           if (!arrayWords.includes(arrayRandom)) {
-            await insertDatabase(arrayRandom, authorMessage);
+            await insertDatabaseInfo(arrayRandom, authorMessage);
           }
 
           arrayWords.push(arrayRandom);
@@ -185,19 +185,23 @@ client.on("messageCreate", async (message) => {
     
     if (speakRNG < 14) {
       // Speak a random phrase/word
-      speakRNG = algorithmRNG(3);
       let phraseToSpeak;
 
-      if (speakRNG === 1) {
-        phraseToSpeak = await searchDatabaseRandomRegex(arrayRandom);
-      } else if (speakRNG === 2) {
-        phraseToSpeak = await randomDatabase();
-      } else {
-        // Pick up a random word inside the database :D
-        phraseToSpeak = arrayRandomReturn(await randomDatabase());
-      }
+      do {
+        speakRNG = algorithmRNG(3);
 
-      if (phraseToSpeak === null) return;
+        if (speakRNG === 1) {
+          phraseToSpeak = await searchDatabaseRandomRegex(arrayRandom);
+        } else if (speakRNG === 2) {
+          phraseToSpeak = await randomDatabase();
+        } else {
+          // Pick up a random word inside the database :D
+          phraseToSpeak = arrayRandomReturn(await randomDatabase());
+        }
+
+        if (phraseToSpeak === null) return;
+      } while (phraseToSpeak === userContent);
+
       await message.reply(phraseToSpeak);
     }
   }
