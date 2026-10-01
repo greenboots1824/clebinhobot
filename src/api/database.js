@@ -1,86 +1,91 @@
 import Database, { SqliteError } from "better-sqlite3";
-const db = new Database("database.db");
 
-export async function startDatabase() {
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS phrases (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      phrase TEXT NOT NULL UNIQUE CHECK (TRIM(phrase) <> ''),
-      user TEXT NOT NULL
-    )
-  `);
-}
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-export async function insertDatabase(msg, user) {
+import { mkdir } from 'node:fs/promises';
+
+import { startDatabase } from './setupDatabase.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// The database path
+const dbPath = path.join(__dirname, "..", "database", "database.db");
+
+const db = new Database(dbPath);
+
+export function insertDatabaseInfo(msg, user) {
   try {
-    await db.prepare(`
+    db.prepare(`
       INSERT OR IGNORE INTO phrases (phrase, user)
       VALUES (?, ?)
     `).run(msg, user);
 
-    await console.log(`[+] (insertDatabase) "${msg}" de ${user} enviado para o banco de dados`);
+    console.log(`[+] (insertDatabaseInfo) "${msg}" de ${user} enviado para o banco de dados`);
 
     return true;
   } catch (error) {
     if (error instanceof SqliteError) {
-      await console.error(`[!] Error: ${error.name}`);
-      await startDatabase();
+      console.error(`[!] Error: ${error}`);
+      startDatabasePhrases();
       
       return;
     } else {
-      return error;
+      console.error(`[!] Error: ${error}`);
+      return null;
     }
   }
 }
 
-export async function randomDatabase() {
+export function randomDatabase() {
   try {
-    const result = await db.prepare(`
+    const result = db.prepare(`
       SELECT * FROM phrases
       ORDER BY RANDOM()
       LIMIT 1
     `).get();
 
-    await console.log(`[+] (random) Frase "${result.phrase}" foi escolhida!`);
+    console.log(`[+] (random) Frase "${result.phrase}" foi escolhida!`);
     
     return result.phrase;
   } catch (error) {
     if (error instanceof SqliteError) {
-      await console.error(error);
-      await startDatabase();
+      console.error(error);
+      startDatabasePhrases();
 
       return null;
     } else {
-      await console.error(error);
+      console.error(error);
       return null;
     }
   }
 }
 
-export async function searchDatabaseRandomRegex(pattern) {
+export function searchDatabaseRandomRegex(pattern) {
   try {
-    const searchRandom = await db.prepare(`
+    const searchRandom = db.prepare(`
       SELECT * FROM phrases
       WHERE phrase LIKE ?
       ORDER BY RANDOM()
       LIMIT 1
     `).get(`%${pattern}%`);
 
-    if (searchRandom === undefined) {
+    if (searchRandom == undefined) {
       return randomDatabase();
     }
 
-    await console.log(`[+] (randomRegex) Foi escolhida a mensagem "${searchRandom.phrase}"!`);
+    console.log(`[+] (randomRegex) Foi escolhida a mensagem "${searchRandom.phrase}"!`);
 
     return searchRandom.phrase;
   } catch (error) {
     if (error instanceof SqliteError) {
-      await console.error(error);
-      await startDatabase();
+      console.error(error);
+      startDatabasePhrases();
 
       return null;
     } else {
-      await console.error(error);
+      console.error(error);
       return null;
     }
   }
