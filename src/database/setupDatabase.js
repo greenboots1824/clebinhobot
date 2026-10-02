@@ -9,11 +9,36 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // The database path
-const dbPath = path.join(__dirname, "..", "database", "database.db");
+const dbPath = path.join(
+  __dirname,
+  "..",
+  "db",
+  "database.db"
+);
 
+// Connect to local database
 const db = new Database(dbPath);
 
 export function startDatabase() {
+  // Guild table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS guild_config (
+      guild_id TEXT PRIMARY KEY,
+      prefix TEXT DEFAULT '&',
+      automsg INTEGER DEFAULT 0
+    )
+  `);
+
+  // Algorithm table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS algorithm_config (
+      guild_id TEXT PRIMARY KEY,
+      register_range INTEGER DEFAULT 20,
+      speak_range INTEGER DEFAULT 20
+    )
+  `);
+
+  // Phrases table
   db.exec(`
     CREATE TABLE IF NOT EXISTS phrases (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -21,37 +46,9 @@ export function startDatabase() {
       user TEXT NOT NULL
     )
   `);
-
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS guild_config (
-      guild_id TEXT PRIMARY KEY,
-      prefix TEXT DEFAULT '&',
-      automsg INTEGER DEFAULT 0
-    )
-  `);
-
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS algorithm_config (
-      guild_id TEXT PRIMARY KEY,
-      prefix TEXT DEFAULT '&',
-      automsg INTEGER DEFAULT 0
-    )
-  `);
 }
-
-export async function startDatabaseGuild() {}
 
 /*
-export async function startDatabaseAlgorithm() {
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS guild_config (
-      guild_id TEXT PRIMARY KEY,
-      prefix TEXT DEFAULT '&',
-      
-    )
-  `);
-}
-
 export async function startDatabaseLogging() {
   await db.exec(`
     CREATE TABLE IF NOT EXISTS guild_config (
@@ -63,7 +60,3 @@ export async function startDatabaseLogging() {
   `);
 }
 */
-
-// I'm working on it...
-// export async function updateDatabaseInfo(id, data) {}
-// export async function deleteDatabaseInfo(id) {}
