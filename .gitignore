@@ -3,7 +3,7 @@
 node_modules/
 
 # Databases
-src/database/
+db/
 
 # My ideia files :P
 ideia.txt
